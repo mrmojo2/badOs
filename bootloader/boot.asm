@@ -1,69 +1,72 @@
-ORG 0
+ORG 0x7c00
 BITS 16
 
-;bios parameter block
+;bios parameter block (some bios write in these block so have this to prevent them from overriding code)
 BPB:
 	jmp short code
 	nop
 times 33 db 0
 
 code:
-jmp 0x7c0:start	; bios will load the program to 0x7c00 in the actual memory but org is set to 0 so taking that into account
+jmp 0:start	
 start:
 	cli
-	;setting up data and extra segment to match with actual location
-	mov ax,0x7c0
+	mov ax,0x00
 	mov ds,ax
 	mov es,ax
 	
-	;stack grows downwards so it wont override the bootloader code even though the stack pointer starts at the same physical address as the code
-	mov ax,0x00
 	mov ss,ax
 	mov sp,0x7c00
 	sti
 
 
-	;CHS disk read
-	mov ah,0x02	;disk read
-	mov al,0x01	;number of sectors to be read
-	mov ch,0x00	;cylinder no
-	mov cl,0x02	;sector no
-	mov dh,0x00	;head no
-	mov bx,buffer	;data buffer
-	int 0x13
-	jc error
-
-	mov si,buffer
-	call printmsg
 	jmp $
-
-error:
-	mov si, error_msg
-	call printmsg
-	jmp $
-
-
-
-printmsg:
-	mov bx,0
-	.loop:
-		lodsb
-		cmp al,0
-		je .loop_exit
+	.protected_mode:
+		cli
+		lgdt [gdt_descriptor]
+		mov eax,cr0
+		or eax,0x1
+		mov cr0,eax
 		
-		call printchar	
-		jmp .loop
+		;in protected mode segment registers hold selectors and now cs needs to point to the entry in gdt that has information about the code segemnt i.e gdt_code
+		jmp 0x08:load32
 
-	.loop_exit:
-	ret	
-printchar:
-	mov ah,0eh
-	int 0x10
-	ret
 
-error_msg: db 'Error loading sector...',0
+;GDT taken form https://wiki.osdev.org/GDT_Tutorial#Filling_the_Table (Flat/Long Mode setup)
+gdt_start:
+;table offset 0x00
+gdt_null:
+	dd 0x0
+	dd 0x0
+;table offset 0x08
+gdt_code:
+	dw 0xffff	;limit
+	db 0		;base
+	db 0
+			; base = 0 and limit = ffff tells that the code segment will occuply the entire 4gb space
+	db 0x9a		; access byte (read and execute)
+	db 0xcf		;flag stuff
+	db 0
+;table offset 0x10
+gdt_data:
+	dw 0xffff	;limit
+	dw 0		;base
+	db 0
+			; here also base=0 limit =ffff which means that data segment will occupy entire 4gb space (this is why its called flat mode because cs and ds overlap)
+	db 0x92		; access byte (read and write)
+	db 0xcf		; flag stuff
+	db 0
+gdt_end:
+
+gdt_descriptor:
+	dw gdt_end-gdt_start-1	;size
+	dd gdt_start		;offset
+
+[BITS 32]
+load32:
+	jmp $
 
 times 510-($-$$) db 0
 dw 0xAA55
 
-buffer:
+buffer: 
