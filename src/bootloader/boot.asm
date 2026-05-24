@@ -20,7 +20,7 @@ start:
 	sti
 
 
-	.protected_mode:
+	.enter_protected_mode:
 		cli
 		lgdt [gdt_descriptor]
 		mov eax,cr0
@@ -40,7 +40,7 @@ gdt_null:
 ;table offset 0x08
 gdt_code:
 	dw 0xffff	;limit
-	db 0		;base
+	dw 0		;base
 	db 0
 			; base = 0 and limit = ffff tells that the code segment will occuply the entire 4gb space
 	db 0x9a		; access byte (read and execute)
@@ -61,27 +61,73 @@ gdt_descriptor:
 	dw gdt_end-gdt_start-1	;size
 	dd gdt_start		;offset
 
+
+;cant use bios from here (protected mode) so to read disks have to write our own driver
 [BITS 32]
 load32:
-	; setting up segment registers to "select" to gdt_data entry i.e 0x10 offset
-	mov ax,0x10
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	mov ss, ax
-	mov ebp, 0x003fffff
-	mov esp, ebp
-	
-	;enabling the a20 address line (depends on the processor how to enable this)
-	in al, 0x92
-	or al, 2
-	out 0x92, al
-	
+	mov eax,1		;sector to load from (bootloader at sector 0 kernel starts from sector 1)
+	mov ecx,100		;no of sectors to load (this is arbitrarly chosen)
+	mov edi, 0x00100000	;address to load them into (defined in linker)
+	call ata_lba_read
+	jmp 0x08:0x00100000	
 
-	jmp $
+; driver to read sectors in lba mode copied from https://wiki.osdev.org/ATA_read/write_sectors (and converted to 32bit registers by claude)
+ata_lba_read:
+	pushfd                  ; pushfq is 64-bit, pushfd is 32-bit equivalent
+	and eax, 0x0FFFFFFF     ; mask to 28-bit LBA, using eax not rax
+	push eax
+	push ebx
+	push ecx
+	push edx
+	push edi                ; edi not rdi — 32-bit destination pointer
 
+	mov ebx, eax            ; save LBA in ebx
+	mov edx, 0x01F6
+	shr eax, 24
+	or al, 11100000b
+	out dx, al
+
+	mov edx, 0x01F2
+	mov al, cl
+	out dx, al
+
+	mov edx, 0x1F3
+	mov eax, ebx
+	out dx, al
+
+	mov edx, 0x1F4
+	mov eax, ebx
+	shr eax, 8
+	out dx, al
+
+	mov edx, 0x1F5
+	mov eax, ebx
+	shr eax, 16
+	out dx, al
+
+	mov edx, 0x1F7
+	mov al, 0x20
+	out dx, al
+
+.still_going:
+	in al, dx
+	test al, 8
+	jz .still_going
+
+	mov eax, 256            ; 256 words per sector
+	xor bx, bx
+	mov bl, cl
+	mul bx
+	mov ecx, eax            ; loop counter for insw, using ecx not rcx
+	mov edx, 0x1F0
+	rep insw                ; writes words to [edi], increments edi automatically
+
+	pop edi
+	pop edx
+	pop ecx
+	pop ebx
+	pop eax
+	popfd                   ; popfq is 64-bit, popfd is 32-bit equivalent
+	ret
 times 510-($-$$) db 0
 dw 0xAA55
-
-buffer: 
