@@ -1,5 +1,6 @@
 [BITS 32]
 global _start
+extern kernel_main
 
 _start:
 	; setting up segment registers to "select" to gdt_data entry i.e 0x10 offset
@@ -17,5 +18,7 @@ _start:
 	or al, 2
 	out 0x92, al
 	
-
+	call kernel_main
 	jmp $
+;for alignment
+times 512-($ -  $$) db 0
