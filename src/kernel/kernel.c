@@ -1,5 +1,5 @@
 #include "kernel.h"
-
+#include "idt.h"
 
 uint16_t* VGA_TEXT_BUFFER = 0;	//doesnt work on direct initialization idk why
 int cur_x = 0;
@@ -7,8 +7,8 @@ int cur_y = 0;
 
 void kernel_main(){
 	init_terminal();
-	char h[] = "hello world\nWelcome to my Os";
-	print(h);
+	print("hello world\nWelcome to my Os");
+	init_idt();
 }
 
 uint16_t get_char_code(char c, uint8_t color){
@@ -25,7 +25,7 @@ void init_terminal(){
 void putchar(int x, int y, char c, uint8_t color){
 	VGA_TEXT_BUFFER[(y*VGA_WIDTH)+x] = get_char_code(c,color);
 }
-void print(char* str){
+void print(const char* str){
 	int i = 0;
 	while(str[i]){
 		char c = str[i];
