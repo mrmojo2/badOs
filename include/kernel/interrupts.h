@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+#define PIC1 0x20
+#define PIC2 0xA0
+#define PIC1_COMMAND PIC1
+#define PIC1_DATA    (PIC1+1)
+#define PIC2_COMMAND PIC2
+#define PIC2_DATA    (PIC1+2)
+#define PIC_EOI_CMD  0x20
+
+
+
 /*
  
 Bits 63-48 : offset 16..31    (isr_high / offset_2)
@@ -34,4 +44,9 @@ typedef struct {
 
 
 void init_idt();
+void remap_pic(uint8_t offset1, uint8_t offset2);
+void int0_handler();
+void PIC_sendEOI(uint8_t irq);
+void default_irq_handler();
+void set_int(int i, void* isr_ptr,uint8_t attr);
 #endif

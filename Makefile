@@ -1,4 +1,4 @@
-FILES = ./build/kernel.asm.o	./build/kernel.c.o  ./build/memory.o ./build/idt.o
+FILES = ./build/kernel.asm.o	./build/kernel.c.o  ./build/memory.o ./build/interrupts.c.o ./build/io.asm.o ./build/interrupts.asm.o ./build/graphics.c.o
 INCLUDES = -I./include/kernel \
 	   -I./include/stdlib
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
@@ -23,9 +23,15 @@ all: ./bin/boot.bin ./bin/kernel.bin
 
 ./build/memory.o: ./src/stdlib/memory.c
 	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/stdlib/memory.c -o ./build/memory.o
+./build/graphics.c.o: ./src/stdlib/graphics.c
+	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/stdlib/graphics.c -o ./build/graphics.c.o
 	
-./build/idt.o: ./src/kernel/idt.c
-	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/kernel/idt.c -o ./build/idt.o
+./build/interrupts.c.o: ./src/kernel/interrupts.c
+	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/kernel/interrupts.c -o ./build/interrupts.c.o
+./build/io.asm.o: ./src/stdlib/io.asm
+	nasm -f elf -g ./src/stdlib/io.asm -o ./build/io.asm.o
+./build/interrupts.asm.o: ./src/kernel/interrupts.asm
+	nasm -f elf -g ./src/kernel/interrupts.asm -o ./build/interrupts.asm.o
 clean:
 	rm -rf ./bin/*.bin
 	rm -rf ./build/*.o
