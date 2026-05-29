@@ -1,17 +1,17 @@
 section .asm
 
 
-extern int0_handler
+extern int21_handler
 extern default_irq_handler
 
-global int0_wrapper
+global int21_wrapper
 global default_irq_wrapper
 
-int0_wrapper:
+int21_wrapper:
 	push ebp
 	mov ebp,esp
 	
-	call int0_handler
+	call int21_handler
 
 	pop ebp
 	iret

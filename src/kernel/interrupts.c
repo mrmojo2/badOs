@@ -15,7 +15,7 @@ void default_irq_handler(){
 	PIC_sendEOI(0); 		//send to particular irq???
 }
 
-void int0_handler(){
+void int21_handler(){
 	print("keyboard pressed\n");
 	PIC_sendEOI(1);
 }

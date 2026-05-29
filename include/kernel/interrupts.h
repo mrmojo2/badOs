@@ -45,7 +45,7 @@ typedef struct {
 
 void init_idt();
 void remap_pic(uint8_t offset1, uint8_t offset2);
-void int0_handler();
+void int21_handler();
 void PIC_sendEOI(uint8_t irq);
 void default_irq_handler();
 void set_int(int i, void* isr_ptr,uint8_t attr);

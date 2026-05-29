@@ -3,7 +3,7 @@
 #include "graphics.h"
 
 
-extern void int0_wrapper();
+extern void int21_wrapper();
 
 void kernel_main(){
 	init_terminal();
@@ -18,7 +18,7 @@ void kernel_main(){
 	
 	__asm__ volatile("sti");
 	
-	set_int(0x20,int0_wrapper,0b10001110);	//present, ring0, interrupt gate
+	set_int(0x21,int21_wrapper,0b10001110);	//present, ring0, interrupt gate
 
 }
 
