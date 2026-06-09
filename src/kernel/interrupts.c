@@ -1,8 +1,7 @@
 #include "interrupts.h"
 #include "memory.h"
 #include "graphics.h"
-
-#define KERNEL_TOTAL_INTERRUPTS 512
+#include "config.h"
 
 extern void outb(uint8_t port, uint8_t data);
 extern void default_irq_wrapper();

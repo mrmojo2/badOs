@@ -1,6 +1,17 @@
-FILES = ./build/kernel.asm.o	./build/kernel.c.o  ./build/memory.o ./build/interrupts.c.o ./build/io.asm.o ./build/interrupts.asm.o ./build/graphics.c.o
+FILES = ./build/kernel.asm.o	\
+	./build/kernel.c.o \
+       	./build/memory.o \
+	./build/interrupts.c.o \
+	./build/io.asm.o \
+	./build/interrupts.asm.o \
+	./build/graphics.c.o \
+	./build/heap.c.o \
+	./build/kheap.c.o
+
 INCLUDES = -I./include/kernel \
-	   -I./include/stdlib
+	   -I./include/stdlib \
+	   -I./include
+
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
 all: ./bin/boot.bin ./bin/kernel.bin
@@ -32,6 +43,13 @@ all: ./bin/boot.bin ./bin/kernel.bin
 	nasm -f elf -g ./src/stdlib/io.asm -o ./build/io.asm.o
 ./build/interrupts.asm.o: ./src/kernel/interrupts.asm
 	nasm -f elf -g ./src/kernel/interrupts.asm -o ./build/interrupts.asm.o
+
+./build/heap.c.o: ./src/stdlib/heap.c
+	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/stdlib/heap.c -o ./build/heap.c.o
+./build/kheap.c.o: ./src/kernel/kheap.c
+	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/kernel/kheap.c -o ./build/kheap.c.o
+
+
 clean:
 	rm -rf ./bin/*.bin
 	rm -rf ./build/*.o
